@@ -37,9 +37,13 @@ MIT 라이선스이고 디렉터리 하나로 자립하는 것들만 넣었다. 
 넣는다. 논문 폴더에 바로 깔 때 쓴다.
 
 ```bash
-git clone https://github.com/KIKIKEEM/003.git ~/003-skills
+git clone -b claude/paper-writing-skills-wssd8d \
+  https://github.com/KIKIKEEM/003.git ~/003-skills
 ~/003-skills/scripts/install-skills.sh --target "/경로/논문 폴더"
 ```
+
+레지스트리가 아직 `main`에 머지되기 전이라 `-b`로 브랜치를 지정해야 한다
+([PR #1](https://github.com/KIKIKEEM/003/pull/1)). 머지된 뒤에는 `-b` 없이 클론하면 된다.
 
 경로에 공백이나 한글이 있어도 되고, 따옴표만 씌우면 된다. 되돌릴 때는
 `--remove --target "/경로/논문 폴더"`.

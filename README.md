@@ -17,6 +17,15 @@
 ./scripts/install-skills.sh --target "/경로/논문 폴더"
 ```
 
+이 저장소가 아직 없다면 브랜치를 지정해 클론한다. 레지스트리는
+[PR #1](https://github.com/KIKIKEEM/003/pull/1)이 머지되기 전까지 `main`에 없다.
+
+```bash
+git clone -b claude/paper-writing-skills-wssd8d \
+  https://github.com/KIKIKEEM/003.git ~/003-skills
+~/003-skills/scripts/install-skills.sh --target "/경로/논문 폴더"
+```
+
 각 스킬이 무엇을 하고 어떤 걸 언제 쓰는지는 [`registry/README.md`](registry/README.md),
 기계가 읽는 목록은 [`registry/skills.json`](registry/skills.json)에 있다.
 
