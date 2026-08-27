@@ -1,0 +1,28 @@
+# External skills fetched by scripts/install-skills.sh — never committed here,
+# so this repository redistributes only the MIT-licensed vendored skills.
+/vendor/
+
+# Symlinks created by scripts/install-skills.sh for the external skills.
+# The vendored skills above these lines ARE tracked.
+/.claude/skills/deep-research
+/.claude/skills/academic-paper
+/.claude/skills/academic-paper-reviewer
+/.claude/skills/academic-pipeline
+/.claude/skills/latex-flonat
+/.claude/skills/camera-ready
+/.claude/skills/bib-parse
+/.claude/skills/math-proof
+/.claude/skills/replication-audit
+/.claude/skills/experiment-design
+/.claude/skills/latex-document-skill
+
+# LaTeX build output
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
