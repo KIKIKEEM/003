@@ -31,6 +31,21 @@ MIT 라이선스이고 디렉터리 하나로 자립하는 것들만 넣었다. 
 이 저장소가 서드파티 코드를 재배포하지 않는다. 설치 후에는 Claude Code를 재시작해야
 스킬을 다시 스캔한다.
 
+## 다른 프로젝트에 설치
+
+`--target`을 주면 동봉된 스킬까지 포함해 14개 전부를 그 폴더의 `.claude/skills/`에
+넣는다. 논문 폴더에 바로 깔 때 쓴다.
+
+```bash
+git clone https://github.com/KIKIKEEM/003.git ~/003-skills
+~/003-skills/scripts/install-skills.sh --target "/경로/논문 폴더"
+```
+
+경로에 공백이나 한글이 있어도 되고, 따옴표만 씌우면 된다. 되돌릴 때는
+`--remove --target "/경로/논문 폴더"`.
+
+스크립트는 stock macOS의 bash 3.2와 BSD sed에서 그대로 돈다.
+
 ### [imbad0202/academic-research-skills](https://github.com/imbad0202/academic-research-skills) — CC BY-NC 4.0
 
 문헌조사부터 리뷰 대응까지 전 과정을 덮는 4종 스위트.

@@ -1,23 +1,28 @@
 #!/usr/bin/env bash
 #
-# Install the external skills listed in registry/skills.json.
+# Install the paper-writing skills from registry/skills.json.
 #
-# Skills marked "vendored" in the registry are already committed under
-# .claude/skills/ and need nothing from this script. Skills marked "external"
-# are cloned into vendor/ and symlinked into .claude/skills/ — both of those
-# paths are gitignored, so nothing third-party is redistributed from here.
+# Skills marked "vendored" in the registry live under this repo's
+# .claude/skills/ and are ready to use as-is. Skills marked "external" are
+# cloned into vendor/ and symlinked into .claude/skills/ — both of those paths
+# are gitignored, so nothing third-party is redistributed from this repo.
 #
-#   ./scripts/install-skills.sh            # install every external skill
-#   ./scripts/install-skills.sh ars        # install only matching ids
-#   ./scripts/install-skills.sh --list     # show the registry
-#   ./scripts/install-skills.sh --sync     # git pull each existing clone
-#   ./scripts/install-skills.sh --remove   # drop clones and symlinks
+# With --target, the whole set is installed into another project instead: the
+# vendored skills are copied in, the external ones cloned under that project.
+#
+#   ./scripts/install-skills.sh                  # install external skills here
+#   ./scripts/install-skills.sh flonat           # only ids matching a filter
+#   ./scripts/install-skills.sh --target ~/proj  # install everything into ~/proj
+#   ./scripts/install-skills.sh --list           # show the registry
+#   ./scripts/install-skills.sh --sync           # git pull each existing clone
+#   ./scripts/install-skills.sh --remove         # drop clones and symlinks
+#
+# Runs on bash 3.2 (stock macOS) with BSD or GNU sed.
 #
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VENDOR="$ROOT/vendor"
-SKILLS="$ROOT/.claude/skills"
+TARGET="$ROOT"
 
 # id|repo|ref|license|"dest:srcpath ..."
 EXTERNAL=(
@@ -25,6 +30,9 @@ EXTERNAL=(
   "flonat-research|flonat/flonat-research|main|MIT|latex-flonat:skills/latex camera-ready:skills/camera-ready bib-parse:skills/bib-parse math-proof:skills/math-proof replication-audit:skills/replication-audit experiment-design:skills/experiment-design"
   "latex-document-skill|ndpvt-web/latex-document-skill|main|unlicensed|latex-document-skill:."
 )
+
+# Committed under .claude/skills/ — copied when installing into another project.
+VENDORED="paper-writing claude-latex-paper-skill latex"
 
 die() { printf 'error: %s\n' "$1" >&2; exit 1; }
 
@@ -39,35 +47,53 @@ list_registry() {
   done
 }
 
-selected() {  # $1=id — no filters means everything
+selected() {  # $1=id, rest=filters — no filters means everything
   [ "$#" -le 1 ] && return 0
   local id="$1"; shift
-  for want in "$@"; do [[ "$id" == *"$want"* ]] && return 0; done
+  for want in "$@"; do case "$id" in *"$want"*) return 0 ;; esac; done
   return 1
 }
 
 skill_name_of() {  # $1=skill dir — frontmatter `name:` value, empty if absent
   [ -f "$1/SKILL.md" ] || return 0
-  sed -n '/^---$/,/^---$/{s/^name: *//p}' "$1/SKILL.md" | head -1 | tr -d '"'"'"' '
+  awk '/^---$/{n++; next} n==1 && /^name:/{sub(/^name:[ \t]*/,""); gsub(/^["'"'"']|["'"'"']$/,""); print; exit}' "$1/SKILL.md"
 }
 
-link_skills() {  # $1=clone dir, $2...=dest:srcpath pairs
+set_skill_name() {  # $1=skill dir, $2=new name — rewrite frontmatter `name:`
+  local f="$1/SKILL.md" tmp="$1/.SKILL.md.tmp"
+  awk -v new="$2" '/^---$/{n++} n==1 && !done && /^name:/{print "name: " new; done=1; next} {print}' "$f" >"$tmp"
+  mv "$tmp" "$f"
+}
+
+install_vendored() {
+  local src="$ROOT/.claude/skills" dest="$TARGET/.claude/skills"
+  for name in $VENDORED; do
+    selected "$name" "$@" || continue
+    [ -d "$src/$name" ] || { printf '  skip %s (not present in this repo)\n' "$name"; continue; }
+    rm -rf "$dest/$name"
+    cp -R "$src/$name" "$dest/$name"
+    printf '  copied .claude/skills/%s (MIT)\n' "$name"
+  done
+}
+
+place_skills() {  # $1=clone dir, rest=dest:srcpath pairs
   local clone="$1"; shift
+  local skills="$TARGET/.claude/skills"
   for pair in "$@"; do
     local dest="${pair%%:*}" src="${pair#*:}"
     [ -e "$clone/$src" ] || { printf '  skip %s (upstream layout changed: %s missing)\n' "$dest" "$src"; continue; }
-    rm -rf "$SKILLS/$dest"
+    rm -rf "$skills/$dest"
 
     # Claude Code keys skills off the frontmatter `name:`, not the directory.
-    # When we install under a different name to dodge a collision, the copy has
-    # to carry the new name too — so materialise it instead of symlinking.
+    # Installing under a different name to dodge a collision only works if the
+    # copy carries the new name too — so materialise it instead of symlinking.
     local upstream_name; upstream_name="$(skill_name_of "$clone/$src")"
     if [ -n "$upstream_name" ] && [ "$upstream_name" != "$dest" ]; then
-      cp -r "$clone/$src" "$SKILLS/$dest"
-      sed -i "0,/^name: .*/s//name: $dest/" "$SKILLS/$dest/SKILL.md"
+      cp -R "$clone/$src" "$skills/$dest"
+      set_skill_name "$skills/$dest" "$dest"
       printf '  copied .claude/skills/%s (renamed from "%s")\n' "$dest" "$upstream_name"
     else
-      ln -s "$clone/$src" "$SKILLS/$dest"
+      ln -s "$clone/$src" "$skills/$dest"
       printf '  linked .claude/skills/%s\n' "$dest"
     fi
   done
@@ -75,25 +101,41 @@ link_skills() {  # $1=clone dir, $2...=dest:srcpath pairs
 
 main() {
   local mode=install
-  case "${1-}" in
-    --list) list_registry; return 0 ;;
-    --sync) mode=sync; shift ;;
-    --remove) mode=remove; shift ;;
-    -h|--help) sed -n '2,${/^#/!q;p;}' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; return 0 ;;
-  esac
+  while :; do
+    case "${1-}" in
+      --list) list_registry; return 0 ;;
+      --sync) mode=sync; shift ;;
+      --remove) mode=remove; shift ;;
+      --target) [ -n "${2-}" ] || die "--target needs a directory"
+                mkdir -p "$2" || die "cannot create $2"
+                TARGET="$(cd "$2" && pwd)"; shift 2 ;;
+      -h|--help) awk 'NR>1 && /^#/{sub(/^# ?/,""); print; next} NR>1{exit}' "${BASH_SOURCE[0]}"; return 0 ;;
+      *) break ;;
+    esac
+  done
 
   command -v git >/dev/null || die "git is required"
-  mkdir -p "$VENDOR" "$SKILLS"
+  local vendor="$TARGET/vendor" skills="$TARGET/.claude/skills"
+  mkdir -p "$vendor" "$skills"
+
+  [ "$TARGET" = "$ROOT" ] || printf 'target: %s\n\n' "$TARGET"
+
+  # The vendored skills already sit in .claude/skills/ when installing in place.
+  if [ "$TARGET" != "$ROOT" ] && [ "$mode" = install ]; then
+    printf 'vendored skills\n'
+    install_vendored "$@"
+    printf '\n'
+  fi
 
   for row in "${EXTERNAL[@]}"; do
     IFS='|' read -r id repo ref lic pairs <<<"$row"
     selected "$id" "$@" || continue
-    local clone="$VENDOR/$id"
-    read -r -a pair_arr <<<"$pairs"
+    local clone="$vendor/$id"
+    local pair_arr; read -r -a pair_arr <<<"$pairs"
 
     if [ "$mode" = remove ]; then
       printf '%s: removing\n' "$id"
-      for pair in "${pair_arr[@]}"; do rm -rf "$SKILLS/${pair%%:*}"; done
+      for pair in "${pair_arr[@]}"; do rm -rf "$skills/${pair%%:*}"; done
       rm -rf "$clone"
       continue
     fi
@@ -111,8 +153,13 @@ main() {
       printf '  cloning\n'
       git clone --depth 1 -b "$ref" -q "https://github.com/$repo.git" "$clone"
     fi
-    link_skills "$clone" "${pair_arr[@]}"
+    place_skills "$clone" "${pair_arr[@]}"
   done
+
+  if [ "$mode" = remove ] && [ "$TARGET" != "$ROOT" ]; then
+    for name in $VENDORED; do rm -rf "$skills/$name"; done
+    printf 'vendored skills: removed\n'
+  fi
 
   [ "$mode" = remove ] || printf '\nDone. Restart Claude Code so it rescans .claude/skills/.\n'
 }

@@ -11,6 +11,12 @@
 ./scripts/install-skills.sh          # 외부 스킬 설치
 ```
 
+다른 폴더(예: 실제 논문 작업 폴더)에 14개 전부 설치하려면:
+
+```bash
+./scripts/install-skills.sh --target "/경로/논문 폴더"
+```
+
 각 스킬이 무엇을 하고 어떤 걸 언제 쓰는지는 [`registry/README.md`](registry/README.md),
 기계가 읽는 목록은 [`registry/skills.json`](registry/skills.json)에 있다.
 
