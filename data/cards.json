@@ -1,0 +1,18 @@
+[
+  { "id": 1, "situation": "내 박사논문", "body": "젖은 성냥", "space": "안개 낀 벌판 한가운데", "condition": "바람이 잠깐 멎어야 한다" },
+  { "id": 2, "situation": "지금 우리 팀", "body": "박자가 반 박자씩 어긋난 합주단", "space": "관객이 이미 들어찬 무대 위", "condition": "누군가 먼저 소리를 줄여야 한다" },
+  { "id": 3, "situation": "요즘 내 하루", "body": "물이 새는 양동이", "space": "수도꼭지 바로 아래", "condition": "물을 잠그고 구멍부터 봐야 한다" },
+  { "id": 4, "situation": "내가 하려는 창업", "body": "아직 불이 안 붙은 장작더미", "space": "바람 부는 언덕 위", "condition": "작은 종이 한 장이 필요하다" },
+  { "id": 5, "situation": "그 사람과의 관계", "body": "얇게 언 호수", "space": "양쪽 기슭 사이", "condition": "천천히 걸어야 한다" },
+  { "id": 6, "situation": "내 커리어", "body": "환승역에 서 있는 사람", "space": "지하 3층, 표지판이 두 개", "condition": "다음 열차 소리를 들어야 한다" },
+  { "id": 7, "situation": "지금 배우는 것", "body": "손에 안 익은 낯선 연장", "space": "남의 작업대 위", "condition": "한 번은 망가뜨려 봐야 한다" },
+  { "id": 8, "situation": "내가 만든 콘텐츠", "body": "병에 담아 던진 편지", "space": "밤바다", "condition": "누군가 해변을 걷고 있어야 한다" },
+  { "id": 9, "situation": "우리 조직의 회의", "body": "모두가 노를 젓는데 방향이 다른 배", "space": "물살이 빠른 강 가운데", "condition": "한 사람이 노를 놓아야 한다" },
+  { "id": 10, "situation": "내 건강", "body": "경고등이 켜진 계기판", "space": "고속도로 한복판", "condition": "갓길이 나와야 한다" },
+  { "id": 11, "situation": "요즘 내 감정", "body": "다 채워진 컵", "space": "흔들리는 쟁반 위", "condition": "한 모금 덜어내야 한다" },
+  { "id": 12, "situation": "내가 쓰는 글", "body": "아직 굳지 않은 시멘트", "space": "이미 사람이 지나다니는 길목", "condition": "하룻밤은 아무도 안 밟아야 한다" },
+  { "id": 13, "situation": "AI와 일하는 나", "body": "말이 너무 빠른 통역사와 함께 있는 사람", "space": "낯선 나라의 시장", "condition": "내가 먼저 천천히 말해야 한다" },
+  { "id": 14, "situation": "내 방", "body": "서랍이 다 열려 있는 장", "space": "빛이 안 드는 구석", "condition": "하나씩 닫아야 한다" },
+  { "id": 15, "situation": "지금 이 프로젝트", "body": "이미 굴러가기 시작한 수레", "space": "완만한 내리막", "condition": "손잡이를 잡을 사람이 있어야 한다" },
+  { "id": 16, "situation": "내 인간관계", "body": "가지가 너무 많이 뻗은 나무", "space": "작은 화분", "condition": "가지를 쳐야 뿌리가 산다" }
+]
