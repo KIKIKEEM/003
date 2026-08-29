@@ -37,10 +37,12 @@ export default function Home() {
 
       {!supabaseConfigured && (
         <div className="panel warn">
-          <p className="eyebrow">설정 필요</p>
+          <p className="eyebrow">로컬 모드로 동작 중</p>
           <p style={{ color: 'var(--fg)' }}>
-            Supabase 키가 없어 실시간 연결이 되지 않습니다. Vercel 환경변수에
-            NEXT_PUBLIC_SUPABASE_URL과 NEXT_PUBLIC_SUPABASE_ANON_KEY를 등록하고 다시 배포하세요.
+            지금 이 브라우저의 <strong>탭끼리만</strong> 연결됩니다. 탭 4개를 열면 4인 플레이가
+            그대로 돌아가니 리허설은 이대로 하시면 됩니다.<br />
+            <strong>기기 간 멀티플레이</strong>는 Supabase 키가 필요합니다 — Vercel 환경변수에
+            NEXT_PUBLIC_SUPABASE_URL과 NEXT_PUBLIC_SUPABASE_ANON_KEY를 등록하고 재배포하세요.
           </p>
         </div>
       )}
