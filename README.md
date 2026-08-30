@@ -1,42 +1,129 @@
-# 003
+# CLEAN ROOM — 스타터
 
-논문 작성용 Claude Code 스킬 레지스트리.
+4인 협동 × 10팟 동시 경쟁 시뮬레이션 게임. 룰과 세계관은 `RULEBOOK.md`.
 
-이 저장소를 열고 Claude Code를 실행하면 `.claude/skills/`에 들어 있는
-`paper-writing`, `claude-latex-paper-skill`, `latex` 세 스킬이 바로 잡힌다.
-문헌조사·모의 피어리뷰 같은 나머지 스킬은 필요할 때 받는다.
+**시그널은 참가자가 직접 등록한 자기 문제입니다.** 접속 전 "나의 힘든 현재 문제는 ___" 한 줄과 은유 3요소를 쓰고 들어가면, 4사이클 동안 네 사람의 시그널이 한 번씩 복원됩니다.
 
-```bash
-./scripts/install-skills.sh --list   # 등록된 스킬 전부 보기
-./scripts/install-skills.sh          # 외부 스킬 설치
-```
+**스키마 0개, 로그인 0개.** Supabase Realtime의 broadcast와 presence만 씁니다. 테이블도 RLS 정책도 만들 필요가 없습니다. 해커톤 100분 안에 멀티플레이를 붙이는 가장 빠른 경로입니다.
 
-다른 폴더(예: 실제 논문 작업 폴더)에 14개 전부 설치하려면:
+---
+
+## 사전 세팅 (해커톤 전날, 12분)
 
 ```bash
-./scripts/install-skills.sh --target "/경로/논문 폴더"
+npm install
+cp .env.example .env.local     # 값 3개 채우기
+npm run dev                    # http://localhost:3000
 ```
 
-이 저장소가 아직 없다면 브랜치를 지정해 클론한다. 레지스트리는
-[PR #1](https://github.com/KIKIKEEM/003/pull/1)이 머지되기 전까지 `main`에 없다.
+**Supabase** — 프로젝트 하나 생성 → Project Settings → API에서 `URL`과 `anon public` 키 복사. 그게 전부입니다. Realtime은 기본 활성화되어 있습니다.
 
+**Anthropic** — 콘솔에서 키 발급. `ANTHROPIC_API_KEY`는 서버 라우트에서만 읽으므로 브라우저에 노출되지 않습니다. `NEXT_PUBLIC_` 접두어를 붙이지 마세요.
+
+**Vercel**
 ```bash
-git clone -b claude/paper-writing-skills-wssd8d \
-  https://github.com/KIKIKEEM/003.git ~/003-skills
-~/003-skills/scripts/install-skills.sh --target "/경로/논문 폴더"
+npm i -g vercel
+vercel                                   # 최초 배포
+vercel env add ANTHROPIC_API_KEY         # 3개 모두 등록
+vercel env add NEXT_PUBLIC_SUPABASE_URL
+vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
+vercel --prod
 ```
 
-각 스킬이 무엇을 하고 어떤 걸 언제 쓰는지는 [`registry/README.md`](registry/README.md),
-기계가 읽는 목록은 [`registry/skills.json`](registry/skills.json)에 있다.
+배포 후 **반드시 폰으로 열어보세요.** 당일 발견하면 늦습니다.
 
-## 구성
+---
 
-| 경로 | 내용 |
+## 화면 3종
+
+| 경로 | 누가 | 무엇 |
+|---|---|---|
+| `/` | 참가자 40명 | 세계관 → 시그널 등록 → 팟 코드로 접속 |
+| `/room/[code]` | 참가자 | 역할별로 다르게 렌더링되는 게임 화면 |
+| `/host` | 호스트 빔 | 10팟 리더보드 + 전체 오염 게이지 |
+
+**운영 순서**: 팟마다 대표 1명이 "새 팟 열기" → 나온 4자리 코드를 팀원 3명에게 구두 전달 → 4명 모이면 진행 기기에서 시작. 호스트는 별도 노트북에서 `/host`를 열어 빔에 띄웁니다.
+
+10팟이면 코드 10개가 돌아다닙니다. 화이트보드에 `팟A=XKR7` 식으로 적어두면 사고가 없습니다.
+
+---
+
+## 동작 구조
+
+**엔진 선출** — 팟에 가장 먼저 들어온 기기가 엔진이 되어 게임 상태를 소유하고, 변경마다 전체 상태를 broadcast 합니다. 나머지 3명은 action만 보냅니다. 서버 상태가 없으므로 배포가 단순하고, 대신 **엔진이 새로고침하면 그 팟은 리셋됩니다.** 진행 기기를 만지지 말라고 안내하세요. (당일 리스크 1순위)
+
+**전체 오염 게이지** — 모든 팟이 `clean-room-global` 채널 하나를 공유합니다. 청정도 50 미만 질문이 나올 때마다 전 화면의 게이지가 오르고, 70%를 넘으면 모두의 화면에 스모그가 낍니다. 호스트 서버 없이 동작합니다.
+
+**AI 심판** — `/api/judge`(질문 청정도), `/api/restore`(복원 유사도) 두 개. 둘 다 실패해도 중립 점수로 게임이 계속됩니다. 발표 중 API가 죽어도 무대가 멈추지 않습니다.
+
+---
+
+## 100분 타임라인 (4인 팀)
+
+| 시각 | A 코어 | B 실시간·AI | C 룰·콘텐츠 | D QA·피치 |
+|---|---|---|---|---|
+| T+0 | 레포 clone, `vercel` 최초 배포 | Supabase 키 발급 | 종이로 1판 플레이 | 폰 4대 준비 |
+| T+15 | **콘텐츠는 `data/cards.json`으로 분리 — 여기서 선언** | | | |
+| T+25 | 페이즈 타이머 확인 | judge 프롬프트 튜닝 | 카드 16 → 24장 | 뷰포트 확인 |
+| T+40 | **4명 전원 1판 플레이** | | | |
+| T+55 | 정산 화면 다듬기 | 오염 임계 실측 | 카드 밸런싱 | 버그 리포트 |
+| T+70 | **4명 전원 2판 플레이** | | | |
+| T+85 | 프리즈 | 프리즈 | 밸런스 수치 확정 | 90초 대본 |
+| T+95 | `vercel --prod` | 호스트 화면 리허설 | | 시연 |
+
+**T+40과 T+70의 전원 플레이가 이 타임라인의 핵심입니다.** 4인 게임이라 우리 팀이 곧 테스트 팟입니다. 이걸 건너뛰면 "만들고 보니 재미없더라"를 T+90에 발견하게 됩니다.
+
+---
+
+## 당일에 만질 곳
+
+| 하고 싶은 것 | 파일 |
 |---|---|
-| `.claude/skills/` | 포함된 스킬 (MIT). 각 디렉터리의 `UPSTREAM.md`에 출처와 고정 커밋 |
-| `registry/` | 스킬 카탈로그와 매니페스트 |
-| `scripts/install-skills.sh` | 외부 스킬 설치·갱신·제거 |
-| `vendor/` | 외부 스킬 클론 위치 (gitignore) |
+| 밸런스 수치 전부 | `lib/game.js` 최상단 `BALANCE` |
+| 보관소 시그널 추가 | `data/cards.json` (개발자 없이 가능) |
+| 세계관·카피 | `app/page.jsx` step 0 |
+| 오염 단계 색 | `app/globals.css` 의 `body[data-air=...]` |
+| 심판 채점 기준 | `app/api/judge/route.js`의 `SYSTEM` |
+| 색·타이포 | `app/globals.css`의 `:root` |
+| 역할별 화면 | `components/Views.jsx` (역할당 컴포넌트 1개) |
 
-포함된 스킬은 원본 `LICENSE`를 그대로 두고 복사했다. 외부 스킬은 이 저장소가
-재배포하지 않고 설치 시점에 업스트림에서 직접 받는다.
+---
+
+## 아직 안 붙인 것 (우선순위 순)
+
+1. **교차 감시(사이클 3)** — SENTINEL 화면을 옆 팟 채널로 스위치. `useRoom`에 `pod-{다음코드}` 구독 하나 추가하면 됩니다. 15분.
+2. **ECHO(사이클 4)** — 은유 3요소만 전 구역 공개 + 타 팟 복원 제출. 글로벌 채널에 `echo` 이벤트 추가. 20분. **문제 원문은 절대 broadcast 하지 마세요.**
+3. 엔진 이관(진행 기기가 나가면 다음 사람이 승계).
+
+1번과 2번이 10팟을 하나의 경기장으로 묶는 장치입니다. 시간이 부족하면 **1번만이라도** 붙이세요. 라운드 3의 교차 감시가 이 게임에서 가장 크게 웃음이 터지는 지점입니다.
+
+
+---
+
+## 프라이버시 설계 (건드리지 마세요)
+
+참가자의 문제 원문은 **어떤 채널로도 전송되지 않습니다.**
+
+- 시그널은 `sessionStorage`에만 저장됩니다.
+- 복원 대조(`/api/restore`)는 **SOURCE 본인의 기기에서** 실행됩니다. 다른 팀원 기기는 원문을 받지 않습니다.
+- 정산 화면에 공개되는 것은 은유 3요소뿐이고, "나의 힘든 현재 문제는" 원문은 끝까지 비공개입니다.
+- 호스트 빔에는 점수와 청정도만 올라갑니다.
+
+기능을 추가할 때 이 네 줄이 깨지지 않는지 확인하세요. 사람들이 진짜 문제를 쓰는 이유가 이 설계입니다.
+
+---
+
+## 논문 작성 스킬 (`registry/`)
+
+이 저장소는 게임 외에 논문 작성용 Claude Code 스킬 레지스트리도 담고 있습니다.
+게임 코드와는 독립적이라 `npm run dev`에 영향을 주지 않습니다.
+
+```bash
+./scripts/install-skills.sh --list                 # 등록된 스킬 보기
+./scripts/install-skills.sh                        # 외부 스킬 설치
+./scripts/install-skills.sh --target "/경로/논문 폴더"  # 다른 폴더에 14개 전부 설치
+```
+
+`.claude/skills/`의 `paper-writing`, `claude-latex-paper-skill`, `latex`는 커밋되어
+있어 바로 잡히고, 문헌조사·모의 피어리뷰 등 나머지는 필요할 때 받습니다. 자세한
+카탈로그는 [`registry/README.md`](registry/README.md)에 있습니다.

@@ -1,9 +1,13 @@
+node_modules
+.next
+.env.local
+
 # External skills fetched by scripts/install-skills.sh — never committed here,
 # so this repository redistributes only the MIT-licensed vendored skills.
 /vendor/
 
 # Symlinks created by scripts/install-skills.sh for the external skills.
-# The vendored skills above these lines ARE tracked.
+# The vendored skills are tracked; only these generated entries are ignored.
 /.claude/skills/deep-research
 /.claude/skills/academic-paper
 /.claude/skills/academic-paper-reviewer
