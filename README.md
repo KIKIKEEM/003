@@ -110,3 +110,20 @@ vercel --prod
 - 호스트 빔에는 점수와 청정도만 올라갑니다.
 
 기능을 추가할 때 이 네 줄이 깨지지 않는지 확인하세요. 사람들이 진짜 문제를 쓰는 이유가 이 설계입니다.
+
+---
+
+## 논문 작성 스킬 (`registry/`)
+
+이 저장소는 게임 외에 논문 작성용 Claude Code 스킬 레지스트리도 담고 있습니다.
+게임 코드와는 독립적이라 `npm run dev`에 영향을 주지 않습니다.
+
+```bash
+./scripts/install-skills.sh --list                 # 등록된 스킬 보기
+./scripts/install-skills.sh                        # 외부 스킬 설치
+./scripts/install-skills.sh --target "/경로/논문 폴더"  # 다른 폴더에 14개 전부 설치
+```
+
+`.claude/skills/`의 `paper-writing`, `claude-latex-paper-skill`, `latex`는 커밋되어
+있어 바로 잡히고, 문헌조사·모의 피어리뷰 등 나머지는 필요할 때 받습니다. 자세한
+카탈로그는 [`registry/README.md`](registry/README.md)에 있습니다.
