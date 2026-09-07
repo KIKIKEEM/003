@@ -1,0 +1,94 @@
+{
+  "$comment": "Paper-writing skill registry for Claude Code. Consumed by scripts/install-skills.sh.",
+  "version": 1,
+  "updated": "2026-08-27",
+  "skills": [
+    {
+      "id": "paper-writing",
+      "title": "Paper Writing Skill (SNL-UCSB)",
+      "repo": "SNL-UCSB/paper-writing-skill",
+      "ref": "676f852",
+      "license": "MIT",
+      "install": "vendored",
+      "path": ".claude/skills/paper-writing",
+      "skill_name": "paper-writing",
+      "summary": "Brainstorm -> Draft 0 -> Evaluate -> Write -> Compress pipeline with 18 mechanical + 31 semantic style gates and an independent red-team review pass.",
+      "best_for": "Systems / networking / ML conference and journal papers; prose discipline and revision."
+    },
+    {
+      "id": "claude-latex-paper-skill",
+      "title": "LaTeX Paper Skill (claim ledger + de-AI prose)",
+      "repo": "witold-andelie/claude-latex-paper-skill",
+      "ref": "88e82d6",
+      "license": "MIT",
+      "install": "vendored",
+      "path": ".claude/skills/claude-latex-paper-skill",
+      "skill_name": "claude-latex-paper-skill",
+      "summary": "Claim ledger tying every assertion to an artifact, citations verified rather than recalled, de-AI prose pass, and a mechanical check after each edit.",
+      "best_for": "Theses and technical reports where citation integrity and human-sounding prose matter."
+    },
+    {
+      "id": "latex",
+      "title": "LaTeX Skill for Computational & Applied Mathematics",
+      "repo": "hameefy/claude-latex-skill",
+      "ref": "c594f5a",
+      "license": "MIT",
+      "install": "vendored",
+      "path": ".claude/skills/latex",
+      "skill_name": "latex",
+      "summary": "Compilable LaTeX for theorems, proofs, convergence analysis, algorithms, TikZ and Beamer. Document / snippet / beamer modes.",
+      "best_for": "Math-heavy manuscripts and conference talk slides."
+    },
+    {
+      "id": "academic-research-skills",
+      "title": "Academic Research Skills (ARS)",
+      "repo": "imbad0202/academic-research-skills",
+      "ref": "main",
+      "license": "CC BY-NC 4.0",
+      "license_note": "Non-commercial use only. Not redistributed in this repository; fetched on demand.",
+      "install": "external",
+      "links": [
+        "deep-research:deep-research",
+        "academic-paper:academic-paper",
+        "academic-paper-reviewer:academic-paper-reviewer",
+        "academic-pipeline:academic-pipeline"
+      ],
+      "summary": "Four-skill suite: 13-agent deep research (incl. PRISMA systematic review), 12-agent paper writing pipeline with Markdown/DOCX/LaTeX output, 7-agent mock peer review, and a 10-stage orchestrator.",
+      "best_for": "End-to-end literature review -> draft -> review -> revision workflows.",
+      "reason_external": "Skill directories reference ../shared, ../agents and ../scripts, so they need the full repository tree; also CC BY-NC."
+    },
+    {
+      "id": "flonat-research",
+      "title": "flonat-research (PhD research infrastructure)",
+      "repo": "flonat/flonat-research",
+      "ref": "main",
+      "license": "MIT",
+      "install": "external",
+      "links": [
+        "latex-flonat:skills/latex",
+        "camera-ready:skills/camera-ready",
+        "bib-parse:skills/bib-parse",
+        "math-proof:skills/math-proof",
+        "replication-audit:skills/replication-audit",
+        "experiment-design:skills/experiment-design"
+      ],
+      "link_note": "latex-flonat is renamed from upstream 'latex' to avoid colliding with the vendored latex skill.",
+      "summary": "Skills, agents, hooks and rules for academic workflows: LaTeX, camera-ready checks, bibliography parsing, proof checking, replication audit, experiment design.",
+      "best_for": "Standing research infrastructure around a thesis or lab repo.",
+      "reason_external": "Full infrastructure repo (~23 MB) carrying its own CLAUDE.md, hooks and rules; only a subset is paper-related."
+    },
+    {
+      "id": "latex-document-skill",
+      "title": "Universal LaTeX Document Skill",
+      "repo": "ndpvt-web/latex-document-skill",
+      "ref": "main",
+      "license": "unlicensed",
+      "license_note": "No LICENSE file upstream, so no redistribution rights are granted. Clone it yourself; review before use.",
+      "install": "external",
+      "links": ["latex-document-skill:."],
+      "summary": "27 templates, 27 scripts and 26 reference guides covering general-purpose LaTeX document production.",
+      "best_for": "Template breadth beyond papers (reports, letters, CVs, posters).",
+      "reason_external": "No upstream license; redistribution is not permitted."
+    }
+  ]
+}
