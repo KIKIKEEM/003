@@ -35,7 +35,25 @@ const CFG = {
   ORG_NAME: '',   // 보고서 머리글에 들어갈 기관명 (예: '○○종합사회복지관'). 비우면 생략
   // 활동일지 열 위치 (1부터). 열 순서를 바꾸면 여기만 수정
   COL: { ID: 1, NAME: 4, PROGRAM: 5, KIND: 6, DATE: 7, START: 8, END: 9, CONTENT: 10, VMS: 16 },
+
+  // ── 자동 보고서 (매월 1일) ──
+  AUTO_REPORT_HOUR: 8,          // 매월 1일 몇 시에 실행할지 (0~23, 스크립트 시간대 기준)
+  NOTIFY_EMAILS: '',            // 보고서 PDF를 받을 메일. 쉼표로 여러 명 (예: 'a@x.or.kr, b@x.or.kr'). 비우면 메일 생략
+
+  // ── 웹 대시보드(WebApp.gs) ──
+  // 이 스크립트를 스프레드시트에 붙이지 않고 '독립 프로젝트'로 배포할 때 사용하는 스프레드시트 ID.
+  // 시트에 붙인(컨테이너 바운드) 프로젝트에서는 비워 두어도 됩니다.
+  SPREADSHEET_ID: '100D9egQ6TY03aJEgR0Ikw9yPG69QfmR-AYKY3GdkGqE',
+  DASHBOARD_TITLE: '자원봉사 실적 현황',
 };
+
+/** 컨테이너 바운드면 활성 스프레드시트, 아니면 CFG.SPREADSHEET_ID로 연다 */
+function getSS() {
+  const active = SpreadsheetApp.getActiveSpreadsheet();
+  if (active) return active;
+  if (!CFG.SPREADSHEET_ID) throw new Error('CFG.SPREADSHEET_ID를 설정하세요.');
+  return SpreadsheetApp.openById(CFG.SPREADSHEET_ID);
+}
 
 const STYLE = {
   HEAD_BG: '#e3eee6',
@@ -67,11 +85,70 @@ function addReportMenu() {
     .addItem('연간 보고서 만들기 (연도 입력)', 'reportYearPrompt')
     .addItem('기간 보고서 만들기 (시작~종료 입력)', 'reportPeriodPrompt')
     .addSeparator()
+    .addItem('매월 1일 자동 보고서 켜기', 'installMonthlyTrigger')
+    .addItem('자동 보고서 끄기', 'removeMonthlyTrigger')
+    .addItem('자동 보고서 지금 시험 실행', 'monthlyAutoReport')
+    .addSeparator()
     .addItem('집계 시트 설치 / 재생성', 'setupReportSheets')
     .addItem('집계 범위 새로고침 (_calc 행 맞추기)', 'ensureCalcRows')
     .addSeparator()
     .addItem('도움말', 'showHelp')
     .addToUi();
+}
+
+// ───────────────────────── 매월 1일 자동 보고서 ─────────────────────────
+const AUTO_FN = 'monthlyAutoReport';
+
+/** 매월 1일 CFG.AUTO_REPORT_HOUR시에 지난달 보고서를 자동 생성하는 트리거 설치 (중복 방지) */
+function installMonthlyTrigger() {
+  removeMonthlyTrigger(true);
+  ScriptApp.newTrigger(AUTO_FN).timeBased().onMonthDay(1).atHour(CFG.AUTO_REPORT_HOUR).create();
+  const mail = CFG.NOTIFY_EMAILS ? `\n메일 발송: ${CFG.NOTIFY_EMAILS}` : '\n(메일 발송 없음 — CFG.NOTIFY_EMAILS에 주소를 넣으면 PDF를 메일로 보냅니다)';
+  safeAlert('자동 보고서 켜짐', `매월 1일 ${CFG.AUTO_REPORT_HOUR}시경 지난달 실적보고서를 만들어 드라이브에 PDF로 저장합니다.${mail}`);
+}
+
+function removeMonthlyTrigger(silent) {
+  let n = 0;
+  ScriptApp.getProjectTriggers().forEach(t => { if (t.getHandlerFunction() === AUTO_FN) { ScriptApp.deleteTrigger(t); n++; } });
+  if (!silent) safeAlert('자동 보고서 꺼짐', n ? `트리거 ${n}개를 삭제했습니다.` : '설치된 자동 보고서 트리거가 없습니다.');
+}
+
+/** 트리거가 호출하는 함수. UI 없이 동작하며, 결과를 드라이브 PDF(+메일)로 남긴다 */
+function monthlyAutoReport() {
+  const t = new Date();
+  const s = new Date(t.getFullYear(), t.getMonth() - 1, 1);
+  const e = new Date(t.getFullYear(), t.getMonth(), 0);
+  const titleText = `${s.getFullYear()}년 ${s.getMonth() + 1}월 자원봉사 실적보고`;
+  const out = createReport(s, e, titleText, { silent: true });
+
+  if (CFG.NOTIFY_EMAILS) {
+    const sum = out.summary;
+    const top = sum.byProgram.slice(0, 5).map(p => ` · ${p.program}: ${p.count}건 / ${p.people}명 / ${p.hours}h`).join('\n');
+    const body = [
+      `${titleText}`,
+      `기간 ${sum.start} ~ ${sum.end}`,
+      '',
+      `활동 ${sum.count}건 · 실인원 ${sum.people}명 · 총 ${sum.hours}시간 · 1인 평균 ${sum.avgHours}시간`,
+      '',
+      '프로그램별 상위:', top,
+      '',
+      sum.invalid.length ? `※ 확인 필요 행 ${sum.invalid.length}건 (활동일지에서 시간/날짜 수정 필요)` : '데이터 점검: 이상 없음',
+      '',
+      `스프레드시트: ${getSS().getUrl()}`,
+      out.pdf ? `PDF: ${out.pdf.getUrl()}` : '',
+    ].join('\n');
+    MailApp.sendEmail({
+      to: CFG.NOTIFY_EMAILS, subject: `[자동] ${titleText}`, body,
+      attachments: out.pdf ? [out.pdf.getBlob()] : [],
+    });
+  }
+  Logger.log(`${titleText} 생성 완료: ${out.sheetName}${out.pdf ? ' / PDF ' + out.pdf.getUrl() : ''}`);
+  safeAlert('시험 실행 완료', `${titleText}\n시트 "${out.sheetName}"${out.pdf ? '\nPDF ' + out.pdf.getUrl() : ''}`);
+}
+
+/** 트리거/웹앱처럼 UI가 없는 컨텍스트에서는 alert를 건너뛴다 */
+function safeAlert(title, msg) {
+  try { SpreadsheetApp.getUi().alert(title, msg, SpreadsheetApp.getUi().ButtonSet.OK); } catch (e) { Logger.log(`${title}: ${msg}`); }
 }
 
 function showHelp() {
@@ -500,7 +577,7 @@ function reportPeriodPrompt() {
  * @return {{count:number, people:number, hours:number, byProgram:Array, byKind:Object, byVolunteer:Array, byMonth:Array, invalid:Array}}
  */
 function getSummary(start, end) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSS();
   const log = ss.getSheetByName(CFG.LOG);
   const places = ss.getSheetByName(CFG.PLACES);
   const c = CFG.COL;
@@ -550,8 +627,14 @@ function getSummary(start, end) {
     byProgram, byKind, byVolunteer, byMonth, invalid };
 }
 
-function createReport(start, end, titleText) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+/**
+ * 기간 보고서 시트(값 고정)를 만들고, 폴더가 설정되어 있으면 PDF도 저장한다.
+ * @param {Object} [opts] { silent: true } 이면 UI 알림을 띄우지 않음 (트리거용)
+ * @return {{sheetName:string, summary:Object, pdf:GoogleAppsScript.Drive.File|null}}
+ */
+function createReport(start, end, titleText, opts) {
+  opts = opts || {};
+  const ss = getSS();
   const sum = getSummary(start, end);
   const name = `보고서_${ymd(start).replace(/-/g, '')}-${ymd(end).replace(/-/g, '')}`;
   let s = ss.getSheetByName(name);
@@ -614,19 +697,21 @@ function createReport(start, end, titleText) {
   s.setColumnWidth(1, 200); s.setColumnWidths(2, 3, 110); s.setColumnWidth(4, 260); s.setColumnWidths(5, 3, 100);
   SpreadsheetApp.flush();
 
-  let pdfMsg = '';
+  let pdfMsg = '', pdf = null;
   if (CFG.REPORT_FOLDER_ID) {
     try {
-      const file = exportSheetPdf(ss, s, name);
-      pdfMsg = `\n\nPDF 저장: ${file.getName()}\n${file.getUrl()}`;
+      pdf = exportSheetPdf(ss, s, name);
+      pdfMsg = `\n\nPDF 저장: ${pdf.getName()}\n${pdf.getUrl()}`;
     } catch (e) {
       pdfMsg = `\n\n(PDF 저장 실패: ${e.message})`;
     }
   }
-  ss.setActiveSheet(s);
-  SpreadsheetApp.getUi().alert('보고서 생성 완료',
-    `${titleText}\n\n활동 ${sum.count}건 · 실인원 ${sum.people}명 · 총 ${sum.hours}시간\n시트 "${name}"에 저장했습니다.${pdfMsg}`,
-    SpreadsheetApp.getUi().ButtonSet.OK);
+  if (!opts.silent) {
+    ss.setActiveSheet(s);
+    safeAlert('보고서 생성 완료',
+      `${titleText}\n\n활동 ${sum.count}건 · 실인원 ${sum.people}명 · 총 ${sum.hours}시간\n시트 "${name}"에 저장했습니다.${pdfMsg}`);
+  }
+  return { sheetName: name, summary: sum, pdf };
 }
 
 /** 특정 시트 1장을 PDF로 내보내 지정 폴더에 저장 */
