@@ -113,6 +113,14 @@ vercel --prod
 
 ---
 
+## 자원봉사 실적 집계 (`volunteer-report/`)
+
+`2026년 자원봉사활동관리` 스프레드시트에 붙이는 Google Apps Script입니다. 활동일지를 기준으로
+주/월/연 단위 **몇 명이 몇 시간** 활동했는지 실시간 집계 시트 7개를 만들고, 메뉴에서 월간·연간
+보고서(시트 + PDF)를 생성합니다. 설치·규칙은 [`volunteer-report/README.md`](volunteer-report/README.md).
+
+---
+
 ## 논문 작성 스킬 (`registry/`)
 
 이 저장소는 게임 외에 논문 작성용 Claude Code 스킬 레지스트리도 담고 있습니다.
